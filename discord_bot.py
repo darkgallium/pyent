@@ -11,7 +11,7 @@ import os, re, json, random, datetime
 
 # pyent, a python program that extracts data from uPortal
 #                                                                         
-# Copyright (C) 2017-2018, darkgallium
+# Copyright (C) 2017-2019, darkgallium
 #                                                                         
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,66 +36,34 @@ bot = commands.Bot(command_prefix='~')
 async def on_ready():
     log.logger.info("Logged in on Discord as "+bot.user.name+" ("+bot.user.id+")")
 
-    #await bot.change_presence(game=discord.Game(name="Algèbre Linéaire"), status=discord.Status.dnd)
-    await bot.loop.create_task(check_info())
+    await bot.change_presence(game=discord.Game(name="Algèbre Linéaire"), status=discord.Status.dnd)
+    await bot.loop.create_task(check_results())
 
-
-@bot.command()
-async def unset():
-    e = discord.Embed()
-    ur = ENT.get_unset_results()
-    for i,j in ur.items():
-        e.add_field(name=i, value=j, inline=False)
-
-    await bot.say("", embed=e)
-
-@bot.command()
-async def final_countdown():
-    exams_days = json.load( open(config.filestore+"exam_schedule.json", 'r') )
-    most_close_date = datetime.datetime(1999, 1, 1)
-
-    for d in exams_days['dates']:
-        parsed_date = datetime.datetime.strptime(d, "%Y%m%d%H%M%S")
-        
-        if parsed_date > most_close_date:
-            most_close_date = parsed_date
-
-
-    countdown = most_close_date - datetime.datetime.now()
-    hours, remainder = divmod(countdown.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    await bot.say("Il vous reste "+str(countdown.days)+" jours, "+str(hours)+" heures, "+str(minutes)+" minutes et "+str(seconds)+" secondes avant le début de la prochaine session de partiels.\r\nRetournez donc à vos révisisons !")
-
-
-async def check_info():
-    
+async def check_results():
     await bot.wait_until_ready()
     
     while not bot.is_closed:
         d = datetime.datetime.now()
         
         if ENT.crawling_available():
+
             e = ENT(config.ent_login, config.ent_password)
             changes = e.crawl()
             
-            for c in config.ds_bot_notif_channel:
-                channel = bot.get_channel(c)           
+            for channel_id in config.ds_bot_notif_channels:
                 
-                if len(changes[0])>1:
-                    await bot.send_message(channel,'Bonjour!\r\n')
-                    for c in changes[0]:
+                channel = bot.get_channel(channel_id)
+
+                if len(changes)>1:
+                    await bot.send_message(channel,'@everyone Bonjour!\r\n')
+                    for c in changes:
                             d = c.split(",")
                             await bot.send_message(channel,'Une nouvelle note de '+d[0]+' ('+d[1]+') est disponible sur l\'ENT.\r\n')
                     await bot.send_message(channel,'Vous pouvez les consulter au lien suivant : '+config.ent_results_url)
                     
-                elif len(changes[0])==1:
-                    d = changes[0][0].split(",")
-                    await bot.send_message(channel,'Bonjour!\r\nUne nouvelle note de '+d[0]+' ('+d[1]+') est disponible sur l\'ENT.\r\nVous pouvez la consulter au lien suivant : '+config.ent_results_url)
-                
-                if "year_info" in changes[1]: 
-                    await bot.send_message(channel,'Bonjour!\r\nLes délibérations du jury d\'année sont dés à présent disponible sur l\'ENT.\r\nConsultez-les ici (onglet dossier administratif) : '+config.ent_results_url)
-                if "dept_info" in changes[1]:
-                    await bot.send_message(channel,'Bonjour!\r\nLe tableau des affectations en départements de spécialité est désormais disponible sur l\'intranet.\r\nConsultez-le ici : '+config.ent_dept_assgt_url)
+                elif len(changes)==1:
+                    d = changes[0].split(",")
+                    await bot.send_message(channel,'@everyone Bonjour!\r\nUne nouvelle note de '+d[0]+' ('+d[1]+') est disponible sur l\'ENT.\r\nVous pouvez la consulter au lien suivant : '+config.ent_results_url)
 
         await asyncio.sleep(config.crawling_interval)
 

@@ -1,0 +1,18 @@
+{
+	"debug": false,
+
+	"filestore": "/opt/pyent/store/",
+	"ent_login": "",
+	"ent_password":"",
+	"ent_entrypoint_url": "https://cas.insa-rennes.fr/cas/login?service=https://ent.insa-rennes.fr/uPortal/Login",
+       	"ent_results_url": "https://ent.insa-rennes.fr/uPortal/f/infosperso/p/dossierAdmEtu.u18l1n17/max/render.uP?pCp",
+	
+	"crawling_enabled": true,	
+	"crawling_schedule_days": "1-5",
+	"crawling_schedule_hours": "7-20",
+	"crawling_interval": 300,
+
+	"ds_bot_tkn": "",
+	"ds_bot_notif_channels": [ "" ]
+}
+
